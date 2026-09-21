@@ -14,16 +14,16 @@ header{padding:20px 18px 10px;background:var(--card);position:sticky;top:0;z-ind
 h1{margin:0 0 14px;font-size:28px}.search{width:100%;padding:13px 15px;border:1px solid var(--line);border-radius:14px;font-size:16px}
 main{padding:16px 14px 100px;max-width:760px;margin:auto}.btn{border:0;border-radius:14px;padding:14px 17px;background:var(--accent);color:#fff;font-weight:700;font-size:16px}.full{width:100%;margin:0 0 16px}
 .tabs{display:flex;gap:8px;margin-bottom:14px}.tab{flex:1;background:#e9e4e0;color:var(--text);border:0;border-radius:12px;padding:11px}.tab.active{background:#d9c7ce;color:var(--accent);font-weight:700}
-.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:15px;margin-bottom:11px;display:flex;gap:13px}.bottle{width:62px;height:82px;border-radius:8px;background:#eee3dc;object-fit:cover}.info{flex:1}.name{font-weight:800;font-size:17px}.meta{color:var(--muted);font-size:14px;margin-top:4px}.qty{font-weight:800;color:var(--accent);margin-top:7px}.shelf{font-size:13px;margin-top:6px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:15px;margin-bottom:11px;display:flex;gap:13px}.brand{display:flex;align-items:center;gap:10px;margin-bottom:14px}.brand img{width:54px;height:54px;border-radius:50%;background:#000}.brand-title{font-size:28px;font-weight:800}.brand-sub{font-size:10px;letter-spacing:2px;color:var(--muted);margin-top:2px}.viewbar{display:flex;gap:8px;margin-bottom:12px}.viewbar .tab{font-size:14px}.grid-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.grid-list .card{display:block;margin:0;padding:10px}.grid-list .bottle{width:100%;height:180px;margin-bottom:8px}.grid-list .info{min-width:0}.grid-list .name{font-size:15px;line-height:1.2}.grid-list .meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.grid-list .tab{width:100%}.fridge .mini{position:relative;min-width:64px;height:82px;background:#eee3dc;color:var(--text);padding:3px;display:flex;align-items:flex-end;overflow:hidden}.fridge .mini img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.fridge .mini span{position:relative;z-index:1;background:rgba(255,255,255,.88);width:100%;font-size:9px;line-height:1.1;padding:2px}.fridge .mini .mini-qty{position:absolute;right:2px;top:2px;z-index:2;background:#6b2140;color:#fff;border-radius:10px;padding:2px 5px;font-size:9px;font-weight:700}.bottle{width:62px;height:82px;border-radius:8px;background:#eee3dc;object-fit:cover}.info{flex:1}.name{font-weight:800;font-size:17px}.meta{color:var(--muted);font-size:14px;margin-top:4px}.qty{font-weight:800;color:var(--accent);margin-top:7px}.shelf{font-size:13px;margin-top:6px}
 form{background:var(--card);border-radius:18px;padding:16px;border:1px solid var(--line)}label{display:block;font-weight:700;font-size:14px;margin:12px 0 6px}input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;font-size:16px;background:#fff}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hidden{display:none}
 .fridge{background:#dedbd8;border-radius:18px;padding:10px}.shelfrow{background:#f9f8f7;border-bottom:8px solid #b8b2ad;min-height:92px;padding:10px;display:flex;gap:8px;align-items:flex-end;overflow:auto}.shelfrow:last-child{border-bottom:0}.mini{min-width:52px;height:66px;background:#6b2140;border-radius:7px 7px 12px 12px;color:#fff;font-size:10px;padding:6px 3px;text-align:center;display:flex;align-items:flex-end;justify-content:center}.slabel{font-size:12px;color:var(--muted);margin:4px 0}
 .empty{text-align:center;color:var(--muted);padding:30px 10px}
-.history{font-size:13px;color:var(--muted);margin-top:8px;border-top:1px solid var(--line);padding-top:8px}
+.danger{color:#9b1c1c;background:#f7e5e5}.history{font-size:13px;color:var(--muted);margin-top:8px;border-top:1px solid var(--line);padding-top:8px}
 small{color:var(--muted)}
 </style>
 </head>
 <body>
-<header><h1>🍷 Borhűtő</h1>
+<header><div class="brand"><img src="icon-192.png" alt="DD13 Wine Collection"><div><div class="brand-title">Borhűtő</div><div class="brand-sub">DD13 · WINE COLLECTION</div></div></div>
 <input id="search" class="search" placeholder="Keresés név, évjárat, régió...">
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
 <select id="filterColor"><option value="">Minden szín</option><option>Vörös</option><option>Fehér</option><option>Rozé</option><option>Pezsgő</option></select>
@@ -35,7 +35,7 @@ small{color:var(--muted)}
 <section id="wines">
 <button class="btn full" id="addBtn">＋ Bor hozzáadása</button>
 <div id="alerts" style="margin-bottom:14px"></div>
-<div id="list"></div>
+<div class="viewbar"><button class="tab active" id="gridBtn">▦ Rács</button><button class="tab" id="listBtn">☰ Lista</button></div><div id="list"></div>
 </section>
 <section id="fridge" class="hidden"><div class="fridge" id="fridgeView"></div></section>
 <section id="history" class="hidden"><div id="historyView"></div></section>
@@ -58,6 +58,8 @@ small{color:var(--muted)}
 <script>
 const KEY='borhuto_demo_v1';
 let state={wines:[],history:[]};
+let editingId=null;
+let viewMode=localStorage.getItem('borhuto_view')||'grid';
 let dbPromise;
 function openDB(){
  return dbPromise||(dbPromise=new Promise((resolve,reject)=>{
@@ -111,11 +113,14 @@ function render(){
  const types=state.wines.length;
  document.getElementById('stats').innerHTML=`<div style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px"><small>🧊 Hűtőben</small><div style="font-size:25px;font-weight:800;color:var(--accent)">${total} palack</div></div><div style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px"><small>🍷 Borfajta</small><div style="font-size:25px;font-weight:800;color:var(--accent)">${types}</div></div>`;
  const wines=state.wines.filter(w=>[w.name,w.vintage,w.region,w.color].join(' ').toLowerCase().includes(q) && (!fc||w.color===fc) && (!fr||(w.region||'').toLowerCase().includes(fr)));
+ document.getElementById('list').className=viewMode==='grid'?'grid-list':'';
+ document.getElementById('gridBtn').classList.toggle('active',viewMode==='grid');
+ document.getElementById('listBtn').classList.toggle('active',viewMode==='list');
  document.getElementById('list').innerHTML=wines.length?wines.map(w=>{
    const from=+w.drinkFrom||0,to=+w.drinkTo||0;
    const timing=from&&now<from?`⏳ ${from}-tól`:from&&to&&now>to?`⚠️ ${to} után`:from&&to?`🍷 ${from}–${to}`:'';
    return `<div class="card">
-   ${w.photo?`<img class="bottle" src="${w.photo}">`:`<div class="bottle"></div>`}
+   ${w.photo?`<img class="bottle" src="${w.photo}" alt="">`:`<div class="bottle"></div>`}
    <div class="info"><div class="name">${esc(w.name)} ${w.vintage?`(${esc(w.vintage)})`:''}</div>
    <div class="meta">${esc(w.region)} · ${esc(w.color)}</div>
    <div class="qty">${w.qty} palack</div>
@@ -123,11 +128,12 @@ function render(){
    ${timing?`<div class="shelf">${timing}</div>`:''}
    ${w.aging?`<div class="shelf">⏳ Érlelés: ${esc(w.aging)}</div>`:''}
    <button class="tab" style="margin-top:8px" onclick="drink('${w.id}')">− 1 palack elfogyasztva</button>
-   <button class="tab" style="margin-top:8px" onclick="editWine('${w.id}')">✏️ Szerkesztés</button></div></div>`;
+   <button class="tab" style="margin-top:8px" onclick="editWine('${w.id}')">✏️ Szerkesztés</button>
+   <button class="tab danger" style="margin-top:8px" onclick="deleteWine('${w.id}')">🗑️ Törlés</button></div></div>`;
  }).join(''):'<div class="empty">Nincs találat.</div>';
 
  let max=Math.max(1,...state.wines.map(w=>+w.shelf||1));
- document.getElementById('fridgeView').innerHTML=Array.from({length:max},(_,i)=>{let n=i+1,ws=state.wines.filter(w=>+w.shelf===n&&w.qty>0);return `<div class="slabel">${n}. polc · ${ws.reduce((a,w)=>a+w.qty,0)} palack</div><div class="shelfrow">${ws.length?ws.flatMap(w=>Array.from({length:Math.min(w.qty,30)},()=>`<div class="mini" title="${esc(w.name)}">${esc(w.name).slice(0,10)}</div>`)).join(''):'<small>Üres</small>'}</div>`}).join('');
+ document.getElementById('fridgeView').innerHTML=Array.from({length:max},(_,i)=>{let n=i+1,ws=state.wines.filter(w=>+w.shelf===n&&w.qty>0);return `<div class="slabel">${n}. polc · ${ws.reduce((a,w)=>a+w.qty,0)} palack</div><div class="shelfrow">${ws.length?ws.flatMap(w=>Array.from({length:Math.min(w.qty,30)},()=>`<div class="mini" title="${esc(w.name)}">${w.photo?`<img src="${w.photo}" alt="">`:''}<span>${esc(w.name).slice(0,10)}</span><b class="mini-qty">${w.qty}</b></div>`)).join(''):'<small>Üres</small>'}</div>`}).join('');
  document.getElementById('historyView').innerHTML=state.history.length?[...state.history].reverse().map(h=>`<div class="card"><div><b>${esc(h.name)}</b><br><small>${h.date} · ${h.action}</small></div></div>`).join(''):'<div class="empty">Még nincs fogyasztási előzmény.</div>';
 
  const due=state.wines.filter(w=>w.qty>0 && +w.drinkFrom && now>=+w.drinkFrom && (!w.drinkTo || now<=+w.drinkTo));
@@ -137,16 +143,27 @@ function render(){
  <button class="tab" style="margin-top:8px" onclick="requestNotifications()">🔔 Értesítések engedélyezése</button></div>`:'';
 }
 async function drink(id){let w=state.wines.find(x=>x.id===id);if(!w||w.qty<1)return;w.qty--;state.history.push({name:w.name,date:new Date().toLocaleString('hu-HU'),action:'1 palack elfogyasztva'});await save();render();}
+async function deleteWine(id){const w=state.wines.find(x=>x.id===id);if(!w)return;if(!confirm(`Biztosan törlöd ezt a bort?\n\n${w.name}${w.vintage?` (${w.vintage})`:''}`))return;state.wines=state.wines.filter(x=>x.id!==id);await save();render();}
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{if(!b.dataset.tab)return;document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));document.getElementById(b.dataset.tab).classList.remove('hidden');document.querySelectorAll('.tabs .tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');}));
 document.getElementById('addBtn').onclick=()=>{document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));document.getElementById('formSection').classList.remove('hidden');};
 document.getElementById('cancel').onclick=()=>{document.getElementById('formSection').classList.add('hidden');document.getElementById('wines').classList.remove('hidden');};
 document.getElementById('search').oninput=render;
 document.getElementById('filterColor').onchange=render;
 document.getElementById('filterRegion').oninput=render;
+document.getElementById('gridBtn').onclick=()=>{viewMode='grid';localStorage.setItem('borhuto_view',viewMode);render();};
+document.getElementById('listBtn').onclick=()=>{viewMode='list';localStorage.setItem('borhuto_view',viewMode);render();};
 document.getElementById('wineForm').onsubmit=async e=>{e.preventDefault();let f=new FormData(e.target),photo=f.get('photo'),src='';
 if(photo&&photo.size){src=await compressPhoto(photo);}
-state.wines.push({id:crypto.randomUUID(),name:f.get('name'),vintage:f.get('vintage'),region:f.get('region'),color:f.get('color'),qty:+f.get('qty'),shelf:+f.get('shelf'),drinkFrom:f.get('drinkFrom'),drinkTo:f.get('drinkTo'),aging:f.get('aging'),photo:src,added:new Date().toISOString()});
-await save();e.target.reset();document.getElementById('formSection').classList.add('hidden');document.getElementById('wines').classList.remove('hidden');render();};
+if(editingId){
+  const w=state.wines.find(x=>x.id===editingId);
+  if(w){
+    w.name=f.get('name');w.vintage=f.get('vintage');w.region=f.get('region');w.color=f.get('color');w.qty=+f.get('qty');w.shelf=+f.get('shelf');w.drinkFrom=f.get('drinkFrom');w.drinkTo=f.get('drinkTo');w.aging=f.get('aging');
+    if(src) w.photo=src;
+  }
+}else{
+  state.wines.push({id:crypto.randomUUID(),name:f.get('name'),vintage:f.get('vintage'),region:f.get('region'),color:f.get('color'),qty:+f.get('qty'),shelf:+f.get('shelf'),drinkFrom:f.get('drinkFrom'),drinkTo:f.get('drinkTo'),aging:f.get('aging'),photo:src,added:new Date().toISOString()});
+}
+editingId=null;await save();e.target.reset();document.getElementById('formSection').classList.add('hidden');document.getElementById('wines').classList.remove('hidden');render();};
 
 
 function compressPhoto(file){
@@ -169,6 +186,7 @@ function compressPhoto(file){
 
 function editWine(id){
  const w=state.wines.find(x=>x.id===id); if(!w)return;
+ editingId=id;
  const f=document.getElementById('wineForm');
  ['name','vintage','region','color','qty','shelf','drinkFrom','drinkTo','aging'].forEach(k=>{if(f.elements[k])f.elements[k].value=w[k]??''});
  document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));
