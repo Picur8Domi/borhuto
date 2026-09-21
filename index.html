@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="theme-color" content="#6b2140">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Borhűtő</title>
+<style>
+:root{--bg:#f5f3f0;--card:#fff;--text:#211e1c;--muted:#756e69;--accent:#6b2140;--line:#e5dfda}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Arial,sans-serif}
+header{padding:20px 18px 10px;background:var(--card);position:sticky;top:0;z-index:5;border-bottom:1px solid var(--line)}
+h1{margin:0 0 14px;font-size:28px}.search{width:100%;padding:13px 15px;border:1px solid var(--line);border-radius:14px;font-size:16px}
+main{padding:16px 14px 100px;max-width:760px;margin:auto}.btn{border:0;border-radius:14px;padding:14px 17px;background:var(--accent);color:#fff;font-weight:700;font-size:16px}.full{width:100%;margin:0 0 16px}
+.tabs{display:flex;gap:8px;margin-bottom:14px}.tab{flex:1;background:#e9e4e0;color:var(--text);border:0;border-radius:12px;padding:11px}.tab.active{background:#d9c7ce;color:var(--accent);font-weight:700}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:15px;margin-bottom:11px;display:flex;gap:13px}.bottle{width:62px;height:82px;border-radius:8px;background:#eee3dc;object-fit:cover}.info{flex:1}.name{font-weight:800;font-size:17px}.meta{color:var(--muted);font-size:14px;margin-top:4px}.qty{font-weight:800;color:var(--accent);margin-top:7px}.shelf{font-size:13px;margin-top:6px}
+form{background:var(--card);border-radius:18px;padding:16px;border:1px solid var(--line)}label{display:block;font-weight:700;font-size:14px;margin:12px 0 6px}input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;font-size:16px;background:#fff}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hidden{display:none}
+.fridge{background:#dedbd8;border-radius:18px;padding:10px}.shelfrow{background:#f9f8f7;border-bottom:8px solid #b8b2ad;min-height:92px;padding:10px;display:flex;gap:8px;align-items:flex-end;overflow:auto}.shelfrow:last-child{border-bottom:0}.mini{min-width:52px;height:66px;background:#6b2140;border-radius:7px 7px 12px 12px;color:#fff;font-size:10px;padding:6px 3px;text-align:center;display:flex;align-items:flex-end;justify-content:center}.slabel{font-size:12px;color:var(--muted);margin:4px 0}
+.empty{text-align:center;color:var(--muted);padding:30px 10px}
+.history{font-size:13px;color:var(--muted);margin-top:8px;border-top:1px solid var(--line);padding-top:8px}
+small{color:var(--muted)}
+</style>
+</head>
+<body>
+<header><h1>🍷 Borhűtő</h1><input id="search" class="search" placeholder="Keresés név, évjárat, régió..."></header>
+<main>
+<div id="stats" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"></div><div class="tabs"><button class="tab active" data-tab="wines">Borok</button><button class="tab" data-tab="fridge">Hűtő</button><button class="tab" data-tab="history">Előzmények</button></div>
+<section id="wines">
+<button class="btn full" id="addBtn">＋ Bor hozzáadása</button>
+<div id="list"></div>
+</section>
+<section id="fridge" class="hidden"><div class="fridge" id="fridgeView"></div></section>
+<section id="history" class="hidden"><div id="historyView"></div></section>
+<section id="formSection" class="hidden">
+<form id="wineForm">
+<h2>Új bor</h2>
+<label>Név</label><input name="name" required placeholder="pl. Château Gazin">
+<div class="row"><div><label>Évjárat</label><input name="vintage" placeholder="2017"></div><div><label>Szín</label><select name="color"><option>Vörös</option><option>Fehér</option><option>Rozé</option><option>Pezsgő</option></select></div></div>
+<label>Régió</label><input name="region" placeholder="pl. Pomerol / Tokaj">
+<div class="row"><div><label>Mennyiség (palack)</label><input name="qty" type="number" min="0" value="1" required></div><div><label>Hűtő polca</label><input name="shelf" type="number" min="1" value="1" required></div></div>
+<label>Fotó</label><input name="photo" type="file" accept="image/*">
+<p><small>A bekerülés dátuma automatikusan rögzül.</small></p>
+<div class="row"><button type="button" class="tab" id="cancel">Mégse</button><button class="btn">Mentés</button></div>
+</form>
+</section>
+</main>
+<script>
+const KEY='borhuto_demo_v1';
+let state=JSON.parse(localStorage.getItem(KEY)||'{"wines":[],"history":[]}');
+const save=()=>localStorage.setItem(KEY,JSON.stringify(state));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function render(){
+ const total=state.wines.reduce((a,w)=>a+(+w.qty||0),0);
+ const types=state.wines.length;
+ document.getElementById('stats').innerHTML=`<div style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px"><small>🧊 Hűtőben</small><div style="font-size:25px;font-weight:800;color:var(--accent)">${total} palack</div></div><div style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px"><small>🍷 Borfajta</small><div style="font-size:25px;font-weight:800;color:var(--accent)">${types}</div></div>`;
+
+ const q=document.getElementById('search').value.toLowerCase();
+ const wines=state.wines.filter(w=>[w.name,w.vintage,w.region,w.color].join(' ').toLowerCase().includes(q));
+ document.getElementById('list').innerHTML=wines.length?wines.map(w=>`<div class="card">
+ ${w.photo?`<img class="bottle" src="${w.photo}">`:`<div class="bottle"></div>`}
+ <div class="info"><div class="name">${esc(w.name)} ${w.vintage?`(${esc(w.vintage)})`:''}</div>
+ <div class="meta">${esc(w.region)} · ${esc(w.color)}</div><div class="qty">${w.qty} palack</div>
+ <div class="shelf">🧊 ${w.shelf}. polc · 📅 ${new Date(w.added).toLocaleDateString("hu-HU")}</div>
+ <button class="tab" style="margin-top:8px" onclick="drink('${w.id}')">− 1 palack elfogyasztva</button></div></div>`).join(''):'<div class="empty">Még nincs bor a nyilvántartásban.</div>';
+ let max=Math.max(1,...state.wines.map(w=>+w.shelf||1));
+ document.getElementById('fridgeView').innerHTML=Array.from({length:max},(_,i)=>{let n=i+1,ws=state.wines.filter(w=>+w.shelf===n&&w.qty>0);return `<div class="slabel">${n}. polc · ${ws.reduce((a,w)=>a+w.qty,0)} palack</div><div class="shelfrow">${ws.length?ws.flatMap(w=>Array.from({length:Math.min(w.qty,30)},()=>`<div class="mini" title="${esc(w.name)}">${esc(w.name).slice(0,10)}</div>`)).join(''):'<small>Üres</small>'}</div>`}).join('');
+ document.getElementById('historyView').innerHTML=state.history.length?[...state.history].reverse().map(h=>`<div class="card"><div><b>${esc(h.name)}</b><br><small>${h.date} · ${h.action}</small></div></div>`).join(''):'<div class="empty">Még nincs fogyasztási előzmény.</div>';
+}
+function drink(id){let w=state.wines.find(x=>x.id===id);if(!w||w.qty<1)return;w.qty--;state.history.push({name:w.name,date:new Date().toLocaleString('hu-HU'),action:'1 palack elfogyasztva'});save();render();}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{if(!b.dataset.tab)return;document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));document.getElementById(b.dataset.tab).classList.remove('hidden');document.querySelectorAll('.tabs .tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');}));
+document.getElementById('addBtn').onclick=()=>{document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));document.getElementById('formSection').classList.remove('hidden');};
+document.getElementById('cancel').onclick=()=>{document.getElementById('formSection').classList.add('hidden');document.getElementById('wines').classList.remove('hidden');};
+document.getElementById('search').oninput=render;
+document.getElementById('wineForm').onsubmit=async e=>{e.preventDefault();let f=new FormData(e.target),photo=f.get('photo'),src='';if(photo&&photo.size){src=await new Promise(r=>{let rd=new FileReader();rd.onload=()=>r(rd.result);rd.readAsDataURL(photo)})}
+state.wines.push({id:crypto.randomUUID(),name:f.get('name'),vintage:f.get('vintage'),region:f.get('region'),color:f.get('color'),qty:+f.get('qty'),shelf:+f.get('shelf'),photo:src,added:new Date().toISOString()});save();e.target.reset();document.getElementById('formSection').classList.add('hidden');document.getElementById('wines').classList.remove('hidden');render();};
+render();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
+</script>
+</body></html>

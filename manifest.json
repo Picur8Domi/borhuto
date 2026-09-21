@@ -1,0 +1,10 @@
+{
+  "name": "Borhűtő",
+  "short_name": "Borhűtő",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5f3f0",
+  "theme_color": "#6b2140",
+  "lang": "hu-HU",
+  "description": "Saját borhűtő nyilvántartás."
+}
