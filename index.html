@@ -136,7 +136,7 @@ function render(){
  <b>⏰ Fogyasztási emlékeztető</b><div style="margin-top:7px">${due.map(w=>`🍷 ${esc(w.name)} – már elérte az ideális időszakot`).join('<br>')}${late.map(w=>`<br>⚠️ ${esc(w.name)} – az ideális időszak véget ért`).join('')}</div>
  <button class="tab" style="margin-top:8px" onclick="requestNotifications()">🔔 Értesítések engedélyezése</button></div>`:'';
 }
-function drink(id){let w=state.wines.find(x=>x.id===id);if(!w||w.qty<1)return;w.qty--;state.history.push({name:w.name,date:new Date().toLocaleString('hu-HU'),action:'1 palack elfogyasztva'});await save();render();}
+async function drink(id){let w=state.wines.find(x=>x.id===id);if(!w||w.qty<1)return;w.qty--;state.history.push({name:w.name,date:new Date().toLocaleString('hu-HU'),action:'1 palack elfogyasztva'});await save();render();}
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{if(!b.dataset.tab)return;document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));document.getElementById(b.dataset.tab).classList.remove('hidden');document.querySelectorAll('.tabs .tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');}));
 document.getElementById('addBtn').onclick=()=>{document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));document.getElementById('formSection').classList.remove('hidden');};
 document.getElementById('cancel').onclick=()=>{document.getElementById('formSection').classList.add('hidden');document.getElementById('wines').classList.remove('hidden');};
