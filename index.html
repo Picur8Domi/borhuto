@@ -57,10 +57,50 @@ small{color:var(--muted)}
 </main>
 <script>
 const KEY='borhuto_demo_v1';
-let state=JSON.parse(localStorage.getItem(KEY)||'{"wines":[],"history":[]}');
-state.wines=(state.wines||[]).map(w=>({...w,drinkFrom:w.drinkFrom||'',drinkTo:w.drinkTo||'',aging:w.aging||''}));
-state.history=state.history||[];
-const save=()=>localStorage.setItem(KEY,JSON.stringify(state));
+let state={wines:[],history:[]};
+let dbPromise;
+function openDB(){
+ return dbPromise||(dbPromise=new Promise((resolve,reject)=>{
+   const r=indexedDB.open('BorhutoDB',1);
+   r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains('state'))db.createObjectStore('state');};
+   r.onsuccess=()=>resolve(r.result); r.onerror=()=>reject(r.error);
+ }));
+}
+async function loadState(){
+ try{
+   const db=await openDB();
+   const stored=await new Promise((res,rej)=>{
+     const tx=db.transaction('state','readonly'), req=tx.objectStore('state').get('main');
+     req.onsuccess=()=>res(req.result); req.onerror=()=>rej(req.error);
+   });
+   if(stored){state=stored;}
+   else{
+     try{const old=JSON.parse(localStorage.getItem(KEY)||'{"wines":[],"history":[]}');state=old;}catch{}
+     state.wines=(state.wines||[]).map(w=>({...w,drinkFrom:w.drinkFrom||'',drinkTo:w.drinkTo||'',aging:w.aging||''}));
+     state.history=state.history||[];
+     await save();
+   }
+ }catch(e){
+   try{state=JSON.parse(localStorage.getItem(KEY)||'{"wines":[],"history":[]}');}catch{}
+ }
+ state.wines=(state.wines||[]).map(w=>({...w,drinkFrom:w.drinkFrom||'',drinkTo:w.drinkTo||'',aging:w.aging||''}));
+ state.history=state.history||[];
+ render();
+}
+async function save(){
+ try{
+   const db=await openDB();
+   await new Promise((res,rej)=>{
+     const tx=db.transaction('state','readwrite'); tx.objectStore('state').put(state,'main');
+     tx.oncomplete=res; tx.onerror=()=>rej(tx.error);
+   });
+   try{localStorage.setItem(KEY,JSON.stringify({...state,wines:state.wines.map(w=>({...w,photo:undefined}))}));}catch{}
+   return true;
+ }catch(e){
+   try{localStorage.setItem(KEY,JSON.stringify(state));return true;}catch{return false;}
+ }
+}
+
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function render(){
  const q=document.getElementById('search').value.toLowerCase();
@@ -96,15 +136,36 @@ function render(){
  <b>⏰ Fogyasztási emlékeztető</b><div style="margin-top:7px">${due.map(w=>`🍷 ${esc(w.name)} – már elérte az ideális időszakot`).join('<br>')}${late.map(w=>`<br>⚠️ ${esc(w.name)} – az ideális időszak véget ért`).join('')}</div>
  <button class="tab" style="margin-top:8px" onclick="requestNotifications()">🔔 Értesítések engedélyezése</button></div>`:'';
 }
-function drink(id){let w=state.wines.find(x=>x.id===id);if(!w||w.qty<1)return;w.qty--;state.history.push({name:w.name,date:new Date().toLocaleString('hu-HU'),action:'1 palack elfogyasztva'});save();render();}
+function drink(id){let w=state.wines.find(x=>x.id===id);if(!w||w.qty<1)return;w.qty--;state.history.push({name:w.name,date:new Date().toLocaleString('hu-HU'),action:'1 palack elfogyasztva'});await save();render();}
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{if(!b.dataset.tab)return;document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));document.getElementById(b.dataset.tab).classList.remove('hidden');document.querySelectorAll('.tabs .tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');}));
 document.getElementById('addBtn').onclick=()=>{document.querySelectorAll('main>section').forEach(s=>s.classList.add('hidden'));document.getElementById('formSection').classList.remove('hidden');};
 document.getElementById('cancel').onclick=()=>{document.getElementById('formSection').classList.add('hidden');document.getElementById('wines').classList.remove('hidden');};
 document.getElementById('search').oninput=render;
 document.getElementById('filterColor').onchange=render;
 document.getElementById('filterRegion').oninput=render;
-document.getElementById('wineForm').onsubmit=async e=>{e.preventDefault();let f=new FormData(e.target),photo=f.get('photo'),src='';if(photo&&photo.size){src=await new Promise(r=>{let rd=new FileReader();rd.onload=()=>r(rd.result);rd.readAsDataURL(photo)})}
-state.wines.push({id:crypto.randomUUID(),name:f.get('name'),vintage:f.get('vintage'),region:f.get('region'),color:f.get('color'),qty:+f.get('qty'),shelf:+f.get('shelf'),drinkFrom:f.get('drinkFrom'),drinkTo:f.get('drinkTo'),aging:f.get('aging'),photo:src,added:new Date().toISOString()});save();e.target.reset();document.getElementById('formSection').classList.add('hidden');document.getElementById('wines').classList.remove('hidden');render();};
+document.getElementById('wineForm').onsubmit=async e=>{e.preventDefault();let f=new FormData(e.target),photo=f.get('photo'),src='';
+if(photo&&photo.size){src=await compressPhoto(photo);}
+state.wines.push({id:crypto.randomUUID(),name:f.get('name'),vintage:f.get('vintage'),region:f.get('region'),color:f.get('color'),qty:+f.get('qty'),shelf:+f.get('shelf'),drinkFrom:f.get('drinkFrom'),drinkTo:f.get('drinkTo'),aging:f.get('aging'),photo:src,added:new Date().toISOString()});
+await save();e.target.reset();document.getElementById('formSection').classList.add('hidden');document.getElementById('wines').classList.remove('hidden');render();};
+
+
+function compressPhoto(file){
+ return new Promise((resolve,reject)=>{
+   const reader=new FileReader();
+   reader.onerror=()=>reject(reader.error);
+   reader.onload=()=>{
+     const img=new Image();
+     img.onload=()=>{
+       const max=1000, scale=Math.min(1,max/Math.max(img.width,img.height));
+       const c=document.createElement('canvas'); c.width=Math.round(img.width*scale); c.height=Math.round(img.height*scale);
+       c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+       resolve(c.toDataURL('image/jpeg',0.72));
+     };
+     img.onerror=reject; img.src=reader.result;
+   };
+   reader.readAsDataURL(file);
+ });
+}
 
 function editWine(id){
  const w=state.wines.find(x=>x.id===id); if(!w)return;
@@ -119,7 +180,7 @@ async function requestNotifications(){
  if(p==='granted') new Notification('🍷 Borhűtő',{body:'Az értesítések engedélyezve vannak. A fogyasztási emlékeztetők az app megnyitásakor ellenőrződnek.'});
 }
 
-render();
+loadState();
 </script>
 <script>
 if ('serviceWorker' in navigator) {
